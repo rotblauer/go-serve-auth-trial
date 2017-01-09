@@ -103,12 +103,19 @@ func handleAuthentication(w http.ResponseWriter, r *http.Request) {
 
 func handleDeauthentication(w http.ResponseWriter, r *http.Request) {
 	log.Println("Got deauth request.")
+	redirectTarget := "/secure" // assume the worst
 	cookie, err := r.Cookie(cookieName)
 	if err != nil || cookie.Value == "" {
 		return
 	}
-	destroySession(testUser.Name, w)
-	http.Redirect(w, r, "/", 302)
+
+	formCSRFToken := r.FormValue("csrftoken")
+	log.Println("logging out got csrf token from form: ", formCSRFToken)
+	if formCSRFToken == cookie.Value {
+		destroySession(testUser.Name, w)
+		redirectTarget = "/"
+	}
+	http.Redirect(w, r, redirectTarget, 302)
 }
 
 func main() {
